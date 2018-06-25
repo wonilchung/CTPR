@@ -9,8 +9,7 @@ Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Zhaozhong Zhu, Po-Ru Lo
 
 ## 2.	INSTALLING AND COMPILING CTPR
 
-You can download the latest version of the CTPR software at:
-https://www.hsph.harvard.edu/wonil-chung/software/ or 
+You can download the latest version of the CTPR software at:  
 https://github.com/wonilchung/CTPR
 
 ### 2.1	Change log
