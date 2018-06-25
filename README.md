@@ -2,24 +2,85 @@
 
 ## 1.	INTRODUCTION
 
-The CTPR software has been developed for cross-trait penalized regression based polygenic risk prediction using individual-level data and summary statistics. It utilizes not only individual-level genotypes but also summary statistics from large-scale GWAS analyses to improve prediction accuracy. Based on penalized least squares methods, we propose a novel cross trait penalty function to incorporate the shared genetic effects across multiple traits. Our methods are evaluated on GWAS datasets using the Lasso and the minimax concave penalty (MCP) to induce a sparse solution. Our novel implementation of a parallel computing algorithm makes it feasible to apply penalized least squares methods on millions of SNPs from tens of thousands of samples.
+The CTPR software has been developed for cross-trait penalized regression based polygenic risk prediction in large cohorts. It utilizes not only individual-level genotypes but also summary statistics from large-scale GWAS analyses to improve prediction accuracy. Based on penalized least squares methods, we propose a novel cross-trait penalty function with the Lasso and the minimax concave penalty (MCP) to incorporate the shared genetic effects across multiple traits for large-sample genome-wide association study (GWAS) data. Our approach has several advantages: (1) it extracts information from the secondary traits that is beneficial for predicting the primary trait but tunes down information that is not; (2) it can incorporate multiple secondary traits based on individual-level genotypes and/or summary statistics; (3) our novel implementation of a parallel computing algorithm makes it feasible to apply our methods to large biobank-scale GWAS data, and (4) our novel implementation of a distributed memory parallel computing algorithm makes it feasible to apply our methods to biobank-scale GWAS data.  
 The CTPR algorithm is described in the following reference:
-Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Po-Ru Loh, Peter Kraft and Liming Liang. Cross-trait penalized regression for polygenic risk prediction using individual-level data and summary statistics. (2017)
+Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Zhaozhong Zhu, Po-Ru Loh, Peter Kraft and Liming Liang. Efficient Cross-Trait Penalized Regression Increases Prediction Accuracy in Large Cohorts using Secondary Phenotypes. (2018)
 
 
 ## 2.	INSTALLING AND COMPILING CTPR
 
 You can download the latest version of the CTPR software at:
-https://www.hsph.harvard.edu/wonil-chung/software/
+https://www.hsph.harvard.edu/wonil-chung/software/ or 
+https://github.com/wonilchung/CTPR
 
 ### 2.1	Change log
 
 Version 1.0 (January 3, 2017): Initial release of CTPR.
+Version 1.1 (June 22, 2018): First update of CTPR.
 
 ### 2.2	Installation
 
 The CTPR_vX.X.tar.gz download package contains a standalone (i.e., statically linked) 64-bit Linux executable, eagle, which we have tested on several Linux systems. We recommend using this static executable because it is well-optimized and no further installation is required.
-If you wish to compile your own version of the CTPR software from the source code (in the src/ subdirectory), you will need to ensure that compiler requirements and library dependencies are fulfilled, and you will need to make appropriate modifications to the Makefile (MakefileSpp for a single node version or MakfileMpi for MPI version):
+If you wish to compile your own version of the CTPR software from the source code, you will need to ensure that compiler requirements and library dependencies are fulfilled, and you will need to make appropriate modifications to the Makefile (MakefileSpp for a single node version or MakfileMpi for MPI version). We explain how to compile CTPR software on linux system below.
+
+[CentOS]  
+
+(1) install R and RcppArmadillo package  
+
+wget http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz  
+tar -xzf bzip2-1.0.6.tar.gz  
+
+wget http://tukaani.org/xz/xz-5.2.2.tar.gz   
+tar -xzf xz-5.2.2.tar.gz  
+
+wget -qO- https://curl.haxx.se/download/curl-7.52.1.tar.gz  
+tar xvz curl-7.52.1.tar.gz  
+
+wget https://zlib.net/zlib-1.2.11.tar.gz
+tar xvf zlib-1.2.11.tar.gz
+
+wget https://sourceforge.net/projects/pcre/files/pcre/8.40/pcre-8.40.tar.gz  
+tar zxvf pcre-8.40.tar.gz  
+
+wget http://mirror.las.iastate.edu/CRAN/src/base/R-3/R-3.4.4.tar.gz  
+tar xvfz R-3.4.4.tar.gz  
+
+install.packages('RcppArmadillo') 
+
+(2) Install openmpi  
+
+wget https://download.open-mpi.org/release/open-mpi/v2.0/openmpi-2.0.4.tar.gz  
+tar -xvf openmpi-2.0.4.tar.gz  
+
+(3) Compile CTPR  
+
+make -f MakefileO2Mpi  
+make -f MakefileO2Spp  
+
+[Debian Linux]
+
+(1) Install R and RcppArmadillo package  
+
+sudo apt-get update  
+sudo apt-get install r-base-core  
+sudo apt-get install r-base  
+
+install.packages('RcppArmadillo')  
+
+(2) Install openmpi  
+
+apt-cache policy openmpi-bin  
+apt-cache policy openmpi-doc  
+apt-cache policy libopenmpi-dev  
+apt-cache policy libibnetdisc-dev  
+wget https://download.open-mpi.org/release/open-mpi/v2.0/openmpi-2.0.4.tar.gz  
+sudo apt-get install libibnetdisc-dev  
+tar -xvf openmpi-2.0.4.tar.gz  
+
+(3) Compile CTPR  
+
+make -f MakefileO2Mpi  
+make -f MakefileO2Spp  
 
 ### 2.3	Running CTPR
 
