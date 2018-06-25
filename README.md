@@ -15,8 +15,8 @@ https://github.com/wonilchung/CTPR
 
 ### 2.1	Change log
 
-Version 1.0 (January 3, 2017): Initial release of CTPR.
-Version 1.1 (June 22, 2018): First update of CTPR.
+Version 1.0 (January 3, 2017): Initial release of CTPR.  
+Version 1.1 (June 22, 2018): First update of CTPR.  
 
 ### 2.2	Installation
 
