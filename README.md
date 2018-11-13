@@ -19,7 +19,7 @@ Version 1.1 (June 22, 2018): First update of CTPR.
 
 ### 2.2	Installation
 
-The CTPR_vX.X.tar.gz download package contains a standalone (i.e., statically linked) 64-bit Linux executable, eagle, which we have tested on several Linux systems. We recommend using this static executable because it is well-optimized and no further installation is required.
+The CTPR_vX.X.tar.gz download package contains a standalone (i.e., statically linked) 64-bit Linux executable, CTPR, which we have tested on several Linux systems. We recommend using this static executable because it is well-optimized and no further installation is required.
 If you wish to compile your own version of the CTPR software from the source code, you will need to ensure that compiler requirements and library dependencies are fulfilled, and you will need to make appropriate modifications to the Makefile (MakefileSpp for a single node version or MakfileMpi for MPI version). We explain how to compile CTPR software on linux system below.
 
 [CentOS]  
