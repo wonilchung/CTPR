@@ -4,11 +4,15 @@
 ## 1.	INTRODUCTION
 
 The CTPR (Cross-Trait / Cross-eThnic Penalized Regression) software was originally developed for multi-trait polygenic risk prediction in large cohorts and is subsequently being extended for multi-ethnic polygenic risk prediction. It utilizes multiple secondary traits (or ethnicities) based on individual-level genotypes and/or summary statistics from large-scale GWAS studies to improve prediction accuracy. Based on penalized least squares methods, we propose a novel cross trait penalty function with the Lasso and the minimax concave penalty (MCP) to incorporate the shared genetic effects across multiple traits (or ethnicities) and implement it for large-sample GWAS data. Our approach extracts information from the secondary traits (or ethnicities) that is beneficial for predicting the primary trait (or ethnicity) but tunes down information that is not. Our novel implementation of a distributed memory parallel computing algorithm makes it feasible to apply our methods to biobank-scale GWAS data. We compared our multi-trait methods with other existing methods such as MTGBLUP (multi-trait genomic best linear unbiased prediction method), wMT-SBLUP (weighted multi-trait summary statistic best linear unbiased prediction method), MTAG (multi-trait analysis of GWAS) and showed that our approach outperforms them in predictive performance.
-## Citations
+
+### Citations
 The CTPR algorithm is described in the following reference:
+
 Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Zhaozhong Zhu, Po-Ru Loh, Peter Kraft and Liming Liang (2019), Efficient cross-trait penalized regression increases prediction accuracy in large cohorts using secondary phenotypes. Nature Communications, 10, 569.
+
 Wonil Chung and Liming Liang, (2019), Improving the polygenic risk prediction by incorporating LD information from multi-ethnic Biobank data. In preparation.
-## Questions and Requests
+
+### Questions and Requests
 If you have any questions on CTPR software, please email to Wonil Chung (wchung@hsph.harvard.edu).
 
 ## 2.	INSTALLING AND COMPILING CTPR
