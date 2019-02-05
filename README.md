@@ -1,6 +1,5 @@
 # CTPR v1.1 User Manual 
-### Wonil Chung
-### January 29, 2019
+### Wonil Chung, January 29, 2019
 
 ## 1.	INTRODUCTION
 
