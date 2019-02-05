@@ -1,4 +1,4 @@
-# CTPR (Cross-Trait Penalized Regression)
+# CTPR v1.1 User Manual (developed by Wonil Chung)
 
 ## 1.	INTRODUCTION
 
