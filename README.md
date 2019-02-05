@@ -22,9 +22,9 @@ You can download the latest version of the CTPR software at: https://github.com/
 
 ### 2.1	Change log
 
-Version 1.2 (expected in February, 2019): \\
--	Will support MACH dosage file format (e.g. test.mldose, test.mlinfo).\\
--	Will add options for data management to specify a list of individuals to be included or excluded and a list of SNPs to be included or exclude in the analysis.\\
+Version 1.2 (expected in February, 2019): \
+-	Will support MACH dosage file format (e.g. test.mldose, test.mlinfo).\
+-	Will add options for data management to specify a list of individuals to be included or excluded and a list of SNPs to be included or exclude in the analysis.\
 
 Version 1.1 (January 29, 2019):
 -	Modified file type for genotype data from double to float to decrease the memory size in half.
