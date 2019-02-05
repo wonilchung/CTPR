@@ -105,7 +105,7 @@ std::string year = "2017-2019";
 void PrintVersion(){
 	std::cout << "**************************************************************" << std::endl;
 	std::cout << "* CTPR v" << version << " "<< date << "                       " <<std::endl;
-  std::cout << "* Cross-Trait Penalized Regression                            " << std::endl;
+	std::cout << "* Cross-Trait Penalized Regression                            " << std::endl;
 	std::cout << "* Cross-eThnic Penalized Regression                           " << std::endl;
 	std::cout << "* Developed by Wonil Chung                                    " << std::endl;
 	std::cout << "**************************************************************" << std::endl;
