@@ -8,7 +8,7 @@ LIBS= "/n/app/R/3.2.5/lib64/R/lib/libR.so"
 .cpp.o:
 	$(GCC) $(CFLAGS) -c $< 
 
-SOURCE= CPRSppMain.cpp
+SOURCE= CTPRSppMain.cpp
 
 ctpr: $(SOURCE:.cpp=.o)
 	$(GCC) -o $@ $(SOURCE:.cpp=.o) $(LFLAGS) $(LIBS)
