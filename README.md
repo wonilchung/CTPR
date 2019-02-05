@@ -15,6 +15,7 @@ Wonil Chung and Liming Liang, (2019), Improving the polygenic risk prediction by
 ### Questions and Requests
 If you have any questions on CTPR software, please email to Wonil Chung (wchung@hsph.harvard.edu).
 
+
 ## 2.	INSTALLING AND COMPILING CTPR
 
 You can download the latest version of the CTPR software at:  
