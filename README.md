@@ -18,13 +18,13 @@ If you have any questions on CTPR software, please email to Wonil Chung (wchung@
 
 ## 2.	INSTALLING AND COMPILING CTPR
 
-You can download the latest version of the CTPR software at: https://github.com/wonilchung/CTPR
+You can download the latest version of the CTPR software at: https://github.com/wonilchung/CTPR.
 
 ### 2.1	Change log
 
-Version 1.2 (expected in February, 2019): \
--	Will support MACH dosage file format (e.g. test.mldose, test.mlinfo).\
--	Will add options for data management to specify a list of individuals to be included or excluded and a list of SNPs to be included or exclude in the analysis.\
+Version 1.2 (expected in February, 2019): 
+-	Will support MACH dosage file format (e.g. test.mldose, test.mlinfo).
+-	Will add options for data management to specify a list of individuals to be included or excluded and a list of SNPs to be included or exclude in the analysis.
 
 Version 1.1 (January 29, 2019):
 -	Modified file type for genotype data from double to float to decrease the memory size in half.
@@ -35,27 +35,11 @@ Version 1.0 (March 3, 2017):
 
 ### 2.2	Installation
 
-The CTPR_vX.X.tar.gz download package contains a standalone (i.e., statically linked) 64-bit Linux executable, CTPR, which we have tested on several Linux systems. We recommend using this static executable because it is well-optimized and no further installation is required.
-If you wish to compile your own version of the CTPR software from the source code, you will need to ensure that compiler requirements and library dependencies are fulfilled, and you will need to make appropriate modifications to the Makefile (MakefileSpp for a single node version or MakfileMpi for MPI version). We explain how to compile CTPR software on linux system below.
+The CTPR_vX.X.tar.gz download package contains a standalone (i.e., statically linked) 64-bit Linux executable, CTPR, which we have tested on several Linux systems. If you wish to compile your own version of the CTPR software from the source code, you will need to ensure that compiler requirements and library dependencies are fulfilled, and you will need to make appropriate modifications to the Makefile (MakefileSpp for a single node version or MakfileMpi for MPI version). We explain how to install required packages and compile CTPR software on linux system below.
 
 [CentOS]  
 
 (1) install R and RcppArmadillo package  
-
-wget http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz  
-tar -xzf bzip2-1.0.6.tar.gz  
-
-wget http://tukaani.org/xz/xz-5.2.2.tar.gz   
-tar -xzf xz-5.2.2.tar.gz  
-
-wget -qO- https://curl.haxx.se/download/curl-7.52.1.tar.gz  
-tar xvz curl-7.52.1.tar.gz  
-
-wget https://zlib.net/zlib-1.2.11.tar.gz
-tar xvf zlib-1.2.11.tar.gz
-
-wget https://sourceforge.net/projects/pcre/files/pcre/8.40/pcre-8.40.tar.gz  
-tar zxvf pcre-8.40.tar.gz  
 
 wget http://mirror.las.iastate.edu/CRAN/src/base/R-3/R-3.4.4.tar.gz  
 tar xvfz R-3.4.4.tar.gz  
@@ -69,8 +53,8 @@ tar -xvf openmpi-2.0.4.tar.gz
 
 (3) Compile CTPR  
 
-make -f MakefileO2Mpi  
-make -f MakefileO2Spp  
+make -f MakefileMpi  
+make -f MakefileSpp  
 
 [Debian Linux]
 
@@ -94,22 +78,33 @@ tar -xvf openmpi-2.0.4.tar.gz
 
 (3) Compile CTPR  
 
-make -f MakefileO2Mpi  
-make -f MakefileO2Spp  
+make -f MakefileMpi  
+make -f MakefileSpp  
 
 ### 2.3	Running CTPR
 
-To run the CTPR executable, simply invoke ./ctpr or ./ctprmpi the Linux command line (within the CTPR install directory). The example/ subdirectory contains example data and code, so you can learn how to execute CTPR software. To obtain a list of options, run: ./ctpr –h or ./ctprmpi –h
+To run the ctpr executable, simply invoke ./ctpr or ./ctprmpi the Linux command line (within the CTPR install directory). The example/ subdirectory contains example data and code, so you can learn how to execute CTPR software. To obtain information on license of CTPR, run: ./ctpr –l or ./ctprmpi –l. To obtain full list of CTPR options, run: ./ctpr –h or ./ctprmpi –h.
 
 ## 3.	COMPUTING REQUIREMENTS
 
+Basically, CTPR can run on any computing system including PC and Mac but with large-scale biobank-based GWAS data, we recommend using Linux-based high performance computing cluster. For distributed high performance computing, clusters utilize job schedulers such as LSF (Load Sharing Facility) and SLURM (Simple Linux Utility for Resource Management) to start, execute and monitor jobs on a set of allocated computing nodes. We will explain how to execute CTPR on cluster computer using SLURM.
+
 ### 3.1	Operating system
 
-We have only compiled and tested CTPR on Linux computing environments; however, the source code is available if you wish to try compiling CTPR for a different OS.
+We have only compiled and tested CTPR on Linux computing environments including CenOS and Debian Linux. However, the source code is available and thus you can compile CTPR for a different OS.
 
 ### 3.2	Memory
 
 Due to limited memory and computing resources, it may not be feasible to update the coefficients for all SNPs together. Alternatively, we propose to divide SNPs into multiple subgroups and allocate each subgroup to a MPI node for parallel computing. Each node updates only parameters in the subgroup with the remaining coefficients transferred from other nodes. Because MPI allows for communication between different nodes, the data of all nodes are synchronized at each estimation step.
+
+### 3.3 Running Time
+
+To assess the computational feasibility of CTPR for biobank-based GWAS data, we tested with N=437K individuals and P=1M SNPs from UK Biobank, which required ~1.7TB of memory with float data type (i.e. 437K*1M*4B=~1.7TB)4. The CTPR ran on 40 cores (Intel Xeon CPU 2.1 GHz) with 48GB of memory for each core, total of ~1.9TB of memory, for up to 7 days to complete the analyses with 40 core-groups (exact solution). The running time of CTPR depends linearly not only on the sample size (N) and the number of SNPs (P) but also on the number of core-group (q), which represents O(NPq). With 10 core-groups (approximate solution), the running time of CTPR dropped to ~1.75 days and it still generated almost the same predictive performance as exact solution due to good convergence. Even when sample size increases, the running time is able to remain similar because larger sample size increases likelihood of convergence and therefore less number of core-groups are needed. When you use Slurm scheduler, you can specify as
+
+sbatch -n 40 --mem-per-cpu=48G -p mpi -t 5-00:00:00 --wrap="mpirun -np 40 ./ctprmpi --ng 40 …”
+
+sbatch -n 40 --mem-per-cpu=48G -p mpi -t 5-00:00:00 --wrap="mpirun -np 40 ./ctprmpi --ng 10 …”
+
 
 ## 4.	INPUT FILE FORMAT
 
