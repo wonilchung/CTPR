@@ -1,4 +1,6 @@
-# CTPR v1.1 User Manual (developed by Wonil Chung)
+# CTPR v1.1 User Manual 
+### Wonil Chung
+### January 29, 2019
 
 ## 1.	INTRODUCTION
 
