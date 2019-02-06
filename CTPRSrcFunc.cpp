@@ -137,6 +137,11 @@ void PrintHelp(){
 	std::cout << "  --num-phe or --number-phenotype [num]: specify the number of phenotypes to be analyzed (default 1)" << std::endl;
 	std::cout << "  --num-sum or --number-summary [num]: specify the number of phenotypes for summary file (default 1)" << std::endl;
 	std::cout << "  --separ-ind or --separate-individual [num,num,..]: specify the numbers of individuals for each phenotypes separated by comma (,) in case of multiple phenotypes" << std::endl;
+	std::cout << "  --keep [filename]: specify a list of individuals to be included in the analysis" << std::endl;
+	std::cout << "  --remove [filename]: specify a list of individuals to be excluded from the analysis" << std::endl;
+	std::cout << "  --include [filename]: specify a list of SNPs to be included in the analysis" << std::endl;
+	std::cout << "  --exclude [filename]: specify a list of SNPs to be excluded from the analysis" << std::endl;
+	std::cout << "  --scaling or --scaling-phenotype: specify for scaling secondary phenotypes using simple linear regression between phenotypes and genotypes" << std::endl;	
 	std::cout << "  --penalty or --penalty-term [num]: specify the sparsity and cross-trait penalty terms (default 1; 1: Lasso+CTPR; 2: MCP+CTPR)" << std::endl;
 	std::cout << "  --nfold or --number-fold [num]: specify the number of folds for coordinate decent algorithm (default 5)" << std::endl;
 	std::cout << "  --prop or --proportion [num]: specify proportion of maximum number of non-zero beta (default 0.25)" << std::endl;
@@ -150,7 +155,6 @@ void PrintHelp(){
 	std::cout << "  --st or --start-number [num]: specify starting number for MPI files (default 1)" << std::endl;
 	std::cout << "  --flamb1 or --first-lambda1 [num]: specify first lambda1 value for MPI mode (default 1)" << std::endl;
 	std::cout << "  --llamb1 or --last-lambda1 [num]: specify last lambda1 value for MPI mode (default 100)" << std::endl;
-	std::cout << "  --scaling or --scaling-phenotype: specify for scaling secondary phenotypes using simple linear regression between phenotypes and genotypes" << std::endl;
 	std::cout << std::endl;
 }
 
@@ -293,6 +297,27 @@ int AssignParameters(int argc, char **argv, PARAM &cPar){
 			for (j=0; j<vec.size(); j++) std::cout << vec[j].c_str() << " "; std::cout << cPar.ranktxt << std::endl;
 			for (j=0; j<vec.size(); j++) if (atoi(vec[j].c_str())<1) { cPar.error = TRUE; std::cout << " An error Occurred on --separ-ind or --separate-individual..." << std::endl; break; }
 		}
+		else if (std::strcmp(argv[i], "--keep")==0) { // specify a list of individuals to be included in the analysis ////////////////////
+			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
+			std::cout << " A list of individuals to be included..." << std::endl;
+		}
+		else if (std::strcmp(argv[i], "--remove")==0) { // specify a list of individuals to be excluded from the analysis /////////////////////
+			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
+			std::cout << " A list of individuals to be excluded..." << std::endl;
+		}
+		else if (std::strcmp(argv[i], "--include")==0) { // specify a list of SNPs to be included in the analysis /////////////////////
+			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
+			std::cout << " A list of SNPs to be included..." << std::endl;
+		}
+		else if (std::strcmp(argv[i], "--include")==0) { // specify a list of SNPs to be excluded in the analysis /////////////////////
+			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
+			std::cout << " A list of SNPs to be excluded..." << std::endl;
+		}
+		else if (std::strcmp(argv[i], "--scaling")==0 || std::strcmp(argv[i], "--scaling-phenotype")==0) { // for scaling secondary phenotypes //////////////
+			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
+			cPar.useScaling = 1;
+			std::cout << " Conducting Linear Regression for Scaling Secondary Traits..." << std::endl;
+		}
 		else if (std::strcmp(argv[i], "--penalty")==0 || std::strcmp(argv[i], "--penalty-term")==0) { // choice for penalty terms
 			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
 			++i;
@@ -392,11 +417,6 @@ int AssignParameters(int argc, char **argv, PARAM &cPar){
 			cPar.llamb1 = atoi(str.c_str());
 			std::cout << " Last lambda1: " << str << cPar.ranktxt << std::endl;
 			if (cPar.llamb1 < 0 || cPar.llamb1 > 100) { cPar.error = TRUE; std::cout << " An error Occurred on --llamb1 or --last-lambda1..." << std::endl; break; }
-		}
-		else if (std::strcmp(argv[i], "--scaling")==0 || std::strcmp(argv[i], "--scaling-phenotype")==0) { // for scaling secondary phenotypes
-			if(argv[i+1] == NULL || (argv[i+1][0] == '-' && argv[i+1][1] == '-')) { continue; }
-			cPar.useScaling = 1;
-			std::cout << " Conducting Linear Regression for Scaling Secondary Traits..." << std::endl;
 		}
 		else {std::cout << " An error Occurred on Unrecognized Option: " << argv[i] << cPar.ranktxt << std::endl; cPar.error = TRUE; break;}
 	}
