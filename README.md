@@ -10,12 +10,12 @@ In order to download ldsc, you should clone this repository via the commands
     git clone https://github.com/wonilchung/CTPR.git
     cd CTPR
 
-Short tutorials describing how to install and run CTPR can be found in the wiki. If you would like to conduct the tests, please see the wiki https://github.com/wonilchung/CTPR/wiki/CTPR-User-Manual.
+Short tutorials describing how to install and run CTPR can be found in the wiki. If you would like to conduct the tests, please see the [wiki](https://github.com/wonilchung/CTPR/wiki/CTPR-User-Manual).
 
 # Citations
 The CTPR algorithm is described in the following reference:
 
-Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Zhaozhong Zhu, Po-Ru Loh, Peter Kraft and Liming Liang (2019), Efficient cross-trait penalized regression increases prediction accuracy in large cohorts using secondary phenotypes. Nature Communications, 10, 569.
+Wonil Chung, Jun Chen, Constance Turman, Sara Lindstrom, Zhaozhong Zhu, Po-Ru Loh, Peter Kraft and Liming Liang (2019), Efficient cross-trait penalized regression increases prediction accuracy in large cohorts using secondary phenotypes. Nature Communications, 10, 569. [Link](https://www.nature.com/articles/s41467-019-08535-0)
 
 # Questions and Requests
 If you have any questions on CTPR software, please email to Wonil Chung (wchung@hsph.harvard.edu).
