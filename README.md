@@ -5,12 +5,12 @@ The CTPR (Cross-Trait / Cross-eThnic Penalized Regression) software was original
 
 
 # Getting Started
-In order to download ldsc, you should clone this repository via the commands
+In order to download CTPR, you should clone this repository via the commands
 
     git clone https://github.com/wonilchung/CTPR.git
     cd CTPR
 
-Short tutorials describing how to install and run CTPR can be found in the wiki. If you would like to conduct the tests, please see the [wiki](https://github.com/wonilchung/CTPR/wiki/CTPR-User-Manual).
+Short tutorials describing how to install and run CTPR can be found in the wiki. If you would like to conduct the tests, please see the wiki https://github.com/wonilchung/CTPR/wiki/CTPR-User-Manual.
 
 # Citations
 The CTPR algorithm is described in the following reference:
