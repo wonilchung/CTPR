@@ -1,4 +1,4 @@
-# CTPR v1.1 ReadMe
+# CTPR version 1.1
 #### Wonil Chung, January 29, 2019
 
 The CTPR (Cross-Trait / Cross-eThnic Penalized Regression) software was originally developed for multi-trait polygenic risk prediction in large cohorts and is subsequently being extended for multi-ethnic polygenic risk prediction.
