@@ -9,13 +9,15 @@
 ******************************************************************************/
 
 
-#include <RcppArmadillo.h>
-#include <Rcpp.h>
+//#include <Rcpp.h>
+//#include <RcppArmadillo.h>
+//using namespace Rcpp; 
+
+#include <armadillo>
 #include "CTPRSrcFunc.cpp"
 
-
-using namespace Rcpp; 
-
+using namespace arma;
+using namespace std;
 
 /*************************************************************************/
 /*                                                                       */
@@ -24,25 +26,25 @@ using namespace Rcpp;
 /*************************************************************************/
 
 // Main procedure
-void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, const arma::fcube & A, arma::field<arma::fvec> & lambda1, arma::fvec lambda2, 
-	arma::field<arma::fmat> & b_est, arma::field<arma::fmat> & b_est_2, arma::field<arma::fmat> & b_re_est, arma::fmat & b_sec, arma::umat & nzero, PARAM & cPar) {
+void CTPRSppProc(field<fvec> & Ys, field<fmat> & Xs, const fcube & A, field<fvec> & lambda1, fvec lambda2, 
+	field<fmat> & b_est, field<fmat> & b_est_2, field<fmat> & b_re_est, fmat & b_sec, umat & nzero, PARAM & cPar) {
 
 	// Determine a sparcity penaty term (Lasso vs MCP)
-	void (* _Cycle) (const arma::field<arma::fvec> &, const arma::field<arma::fmat> &,
-		arma::fmat &, arma::fmat &, const arma::umat &, const arma::fcube &, int, int, arma::uvec, float, float, const arma::field<arma::fvec> &, bool, float);
+	void (* _Cycle) (const field<fvec> &, const field<fmat> &,
+		fmat &, fmat &, const umat &, const fcube &, int, int, uvec, float, float, const field<fvec> &, bool, float);
 
 	if (cPar.penalize == "MCP" && cPar.penalize2 == "CTPR" && cPar.useSummary == 0) {
 		_Cycle = & _Cycle_M;
-		std::cout << "MCP and CTPR penalties are used..." << std::endl;
+		cout << "MCP and CTPR penalties are used..." << endl;
 	} else if (cPar.penalize == "Lasso" && cPar.penalize2 == "CTPR" && cPar.useSummary == 0){
 		_Cycle = & _Cycle_L;
-		std::cout << "Lasso and CTPR penalties are used..." << std::endl;
+		cout << "Lasso and CTPR penalties are used..." << endl;
 	} else if (cPar.penalize == "MCP" && cPar.penalize2 == "CTPR" && cPar.useSummary == 1) {
 		_Cycle = & _Cycle_MS;
-		std::cout << "MCP and CTPR penalties are used with Summary Statistics..." << std::endl;
+		cout << "MCP and CTPR penalties are used with Summary Statistics..." << endl;
 	} else if (cPar.penalize == "Lasso" && cPar.penalize2 == "CTPR" && cPar.useSummary == 1){
 		_Cycle = & _Cycle_LS;
-		std::cout << "Lasso and CTPR penalties are used with Summary Statistics..." << std::endl;
+		cout << "Lasso and CTPR penalties are used with Summary Statistics..." << endl;
 	} 
 
 	int maxNz = cPar.maxNz;
@@ -56,51 +58,51 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 	int m = Ys.n_elem;
 	int p = Xs(0).n_cols;
 	int q = lambda2.n_elem;
-	arma::uvec ns(m);
+	uvec ns(m);
 	b_est.set_size(q);
 	b_est_2.set_size(q);
 
 	// Retrieve the centers and Center X and Y
-	arma::fmat Xs_c(m, p);
-	arma::fmat Xs_s(m, p);
-	arma::fvec Ys_c(m);
+	fmat Xs_c(m, p);
+	fmat Xs_s(m, p);
+	fvec Ys_c(m);
 	for (i=0; i<m; i++) {
 		ns(i) = Xs(i).n_rows;
-		Xs_c.row(i) = arma::mean(Xs(i));
-		Xs_s.row(i) = arma::stddev(Xs(i), 1);
+		Xs_c.row(i) = mean(Xs(i));
+		Xs_s.row(i) = stddev(Xs(i), 1);
 		Xs(i).each_row() -= Xs_c.row(i);
 		Xs(i).each_row() /= Xs_s.row(i);
-		Ys_c(i) = arma::mean(Ys(i));
+		Ys_c(i) = mean(Ys(i));
 		Ys(i) -= Ys_c(i);
 	}
 
 	////////////////////////////////////////////////////////////////////
-	bool bGWAS = FALSE;
-	arma::field<arma::fvec> Xsb(m);
-	for (i=0; i<m; i++) Xsb(i) = arma::zeros<arma::fvec>(Ys(i).n_elem);
+	bool bGWAS = false;
+	field<fvec> Xsb(m);
+	for (i=0; i<m; i++) Xsb(i) = zeros<fvec>(Ys(i).n_elem);
 	////////////////////////////////////////////////////////////////////
 
 	// Determine the maximum lambda1
 	if (lambda1.n_elem == 0) {
-		std::cout << "Determining maximum lambda1..." << std::endl;
+		cout << "Determining maximum lambda1..." << endl;
 		float lambda1_max = _MaxLambda(Ys, Xs, ns, 1, p);
 		lambda1.set_size(q);
 		for (i=0; i<q; i++) {
-			lambda1(i) = lambda1_max * arma::exp(-6.907755 * arma::linspace<arma::fvec>(0, 1, 101)); 
+			lambda1(i) = lambda1_max * exp(-6.907755 * linspace<fvec>(0, 1, 101)); 
 		}
-		//lambda1(0).save("/n/home03/wchung/gtex/simulation/150101/lambda1.txt", arma::csv_ascii);
-		//std::cout << lambda1_max << std::endl;
-		//std::cout << lambda1(0)(0) << lambda1(0)(1) << lambda1(0)(100) << std::endl;
+		//lambda1(0).save("/n/home03/wchung/gtex/simulation/150101/lambda1.txt", csv_ascii);
+		//cout << lambda1_max << endl;
+		//cout << lambda1(0)(0) << lambda1(0)(1) << lambda1(0)(100) << endl;
 	} else {
 		if (lambda1.n_elem == 1 && q > 1) {
-			arma::fvec tempt = lambda1(0);
+			fvec tempt = lambda1(0);
 			lambda1.set_size(q);
 			for (i=0; i<q; i++) {
 				lambda1(i) = tempt;
 			}
 		} else {
 			if (lambda1.n_elem != q) {
-				std::cout << "The list of lambda1 should have the same length as lambda2..." << std::endl;
+				cout << "The list of lambda1 should have the same length as lambda2..." << endl;
 				return;
 			}
 		}
@@ -108,35 +110,36 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 	
 	int iter, flag = 0;
 	float _lambda1, _lambda2; 
-	arma::fmat _b_est_v1(m, p);
-	arma::fmat _b_est_v2(m, p);
-	arma::fmat _b_est_st(m, p);
-  arma::umat active_set(m, p);
-  arma::umat active_set2(m, p);
-  arma::frowvec temp2(p+1);
+	fmat _b_est_v1(m, p);
+	fmat _b_est_v2(m, p);
+	fmat _b_est_st(m, p);
+  umat active_set(m, p);
+  umat active_set2(m, p);
+  frowvec temp2(p+1);
 
   int L1 = 0;
   int L2 = q;
   for (i=0; i<lambda1.n_elem; i++) {
   	L1 = lambda1(i).n_elem > L1 ? lambda1(i).n_elem : L1;
   }
-  arma::fmat RSS(L1, L2);
-  RSS.fill(NA_REAL);
+  fmat RSS(L1, L2);
+  //RSS.fill(NA_REAL);
+	RSS.fill(datum::nan);
 	
 	// Conduct Coordinate Descent Algorithm
   for (j=0; j<q; j++) {
-  	std::cout << "*";
-  	arma::fmat _b_est(lambda1(j).n_elem, p+1);
+  	cout << "*";
+  	fmat _b_est(lambda1(j).n_elem, p+1);
 
-	//std::cout << lambda2(j) << std::endl;
-	//std::cout << A.slice(0)(0,0) << " " << A.slice(0)(0,1) << " " << A.slice(0)(1,0) << " " << A.slice(0)(1,1) << std::endl;
-	//std::cout << A.slice(1)(0,0) << " " << A.slice(1)(0,1) << " " << A.slice(1)(1,0) << " " << A.slice(1)(1,1) << std::endl;
-	//std::cout << m << " " << p << " " << ns << " " << gamma << std::endl;
+	//cout << lambda2(j) << endl;
+	//cout << A.slice(0)(0,0) << " " << A.slice(0)(0,1) << " " << A.slice(0)(1,0) << " " << A.slice(0)(1,1) << endl;
+	//cout << A.slice(1)(0,0) << " " << A.slice(1)(0,1) << " " << A.slice(1)(1,0) << " " << A.slice(1)(1,1) << endl;
+	//cout << m << " " << p << " " << ns << " " << gamma << endl;
 
   	_lambda2 = lambda2(j);
-		std::cout << lambda1(j).n_elem;
+		cout << lambda1(j).n_elem;
   	for (i=0; i<lambda1(j).n_elem; i++) {
-			std::cout << "~";
+			cout << "~";
       _lambda1 = lambda1(j)(i);
       if (i == 0) { // Basically, initial values for all beta are zero
       	_b_est_v1.zeros();
@@ -145,25 +148,25 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
       }
 
       // One complete cycle through all the coefficients to determine the active sets
-      _Cycle(Ys, Xs, _b_est_v1, b_sec, arma::ones<arma::umat>(m, p), A, m, p, ns, _lambda1, _lambda2, Xsb, bGWAS, gamma);
+      _Cycle(Ys, Xs, _b_est_v1, b_sec, ones<umat>(m, p), A, m, p, ns, _lambda1, _lambda2, Xsb, bGWAS, gamma);
 
 		//if (i==0) {
-		//std::cout << _b_est_v1(0,0) << " " << _b_est_v1(0,1) << " " << _b_est_v1(0,2) << std::endl;
-		//std::cout << _b_est_v1(1,0) << " " << _b_est_v1(1,1) << " " << _b_est_v1(1,2) << std::endl;
+		//cout << _b_est_v1(0,0) << " " << _b_est_v1(0,1) << " " << _b_est_v1(0,2) << endl;
+		//cout << _b_est_v1(1,0) << " " << _b_est_v1(1,1) << " " << _b_est_v1(1,2) << endl;
 		//}
 
 			// Iterate on only the active set till convergence
       iter = 0;
-      while (TRUE) {
-      	active_set = (arma::abs(_b_est_v1) > arma::datum::eps);
+      while (true) {
+      	active_set = (abs(_b_est_v1) > datum::eps);
       	_b_est_v2.ones();
-      	while (TRUE)  {
+      	while (true)  {
       		iter += 1;
-      		if (arma::max(arma::max(arma::abs(_b_est_v1 - _b_est_v2))) <= tol) break;
+      		if (max(max(abs(_b_est_v1 - _b_est_v2))) <= tol) break;
       		_b_est_v2 = _b_est_v1;
       		if (iter >= maxIter) {
-      			std::cout << "Exceeds the maximum iteration for lambda:" << _lambda1 <<"," << _lambda2;
-      			std::cout << ". Further lambda1 will not be considered." << std::endl;
+      			cout << "Exceeds the maximum iteration for lambda:" << _lambda1 <<"," << _lambda2;
+      			cout << ". Further lambda1 will not be considered." << endl;
       			flag = 1;
       			break;
       		}
@@ -171,9 +174,9 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
       	}
 
       	if (flag == 1) break;
-      	_Cycle(Ys, Xs, _b_est_v1, b_sec, arma::ones<arma::umat>(m, p), A, m, p, ns, _lambda1, _lambda2, Xsb, bGWAS, gamma);
-      	active_set2 = (arma::abs(_b_est_v1) > arma::datum::eps);
-      	if (arma::accu(active_set2 != active_set) < 0.5) break;
+      	_Cycle(Ys, Xs, _b_est_v1, b_sec, ones<umat>(m, p), A, m, p, ns, _lambda1, _lambda2, Xsb, bGWAS, gamma);
+      	active_set2 = (abs(_b_est_v1) > datum::eps);
+      	if (accu(active_set2 != active_set) < 0.5) break;
       }
 
       if (flag == 1) {
@@ -181,16 +184,16 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
       	break;
       }
 
-      if (arma::sum(arma::abs(_b_est_v1.row(0)) > arma::datum::eps) > maxNz) {
+      if (sum(abs(_b_est_v1.row(0)) > datum::eps) > maxNz) {
 				break;
 			}
 
       // Convert to the original scale including the intercept
       // Recording only the primary phenotype
-      RSS(i, j) = arma::sum(arma::square(Ys(0) - Xs(0) * _b_est_v1.row(0).t()));
+      RSS(i, j) = sum(square(Ys(0) - Xs(0) * _b_est_v1.row(0).t()));
 
-      temp2(arma::span(1, p)) = _b_est_v1.row(0) / Xs_s.row(0);
-      temp2(0) = Ys_c(0) - arma::sum(_b_est_v1.row(0) / Xs_s.row(0) % Xs_c.row(0));
+      temp2(span(1, p)) = _b_est_v1.row(0) / Xs_s.row(0);
+      temp2(0) = Ys_c(0) - sum(_b_est_v1.row(0) / Xs_s.row(0) % Xs_c.row(0));
       _b_est.row(i) = temp2;
 			_b_est_st = _b_est_v1;
 
@@ -198,8 +201,8 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
     _b_est.resize(i, p+1);
 		b_est(j) = _b_est;
     
-    lambda1(j) = lambda1(j)(arma::span(0, i-1));
-    std::cout << std::endl;
+    lambda1(j) = lambda1(j)(span(0, i-1));
+    cout << endl;
   }
 
   // Calculate AIC, BIC, GCV
@@ -210,30 +213,32 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
   nzero.set_size(L1, L2);
   RSS.resize(L1, L2);
 
-  nzero.fill(NA_INTEGER);
+  //nzero.fill(NA_INTEGER);
+	nzero.fill(datum::nan);
 
   for (j=0; j<L2; j++) {
   	for (i=0; i<lambda1(j).n_elem; i++) {
-  		nzero(i, j) = arma::sum(arma::abs(b_est(j).row(i)) > arma::datum::eps) - 1;
+  		nzero(i, j) = sum(abs(b_est(j).row(i)) > datum::eps) - 1;
   	}
   }
 
   // Re-estimation of the coefficients
-	if (re_est == TRUE) {
-		arma::urowvec active_set3;
-	  arma::frowvec _b_re_est_v1;
-	  arma::fmat _b_re_est;
-		arma::fmat RSS2(L1, L2);
-		RSS2.fill(NA_REAL);
+	if (re_est == true) {
+		urowvec active_set3;
+	  frowvec _b_re_est_v1;
+	  fmat _b_re_est;
+		fmat RSS2(L1, L2);
+		//RSS2.fill(NA_REAL);
+		RSS2.fill(datum::nan);
 		b_re_est.set_size(q);
 		for (j=0; j<q; j++) {
 			_b_re_est.set_size(b_est(j).n_rows, p+1);
 			for (i=0; i<b_est(j).n_rows; i++) {
-				active_set3 = (arma::abs(b_est(j)(i, arma::span(1, p))) > arma::datum::eps);
+				active_set3 = (abs(b_est(j)(i, span(1, p))) > datum::eps);
 				_Re_Estimate(Ys(0), Xs(0), _b_re_est_v1, active_set3);
-				RSS2(i, j) = arma::sum(arma::square(Ys(0) - Xs(0) * _b_re_est_v1.t()));
-				temp2(arma::span(1, p)) = _b_re_est_v1 / Xs_s.row(0);
-				temp2(0) = Ys_c(0) - arma::sum(_b_re_est_v1 / Xs_s.row(0) % Xs_c.row(0));
+				RSS2(i, j) = sum(square(Ys(0) - Xs(0) * _b_re_est_v1.t()));
+				temp2(span(1, p)) = _b_re_est_v1 / Xs_s.row(0);
+				temp2(0) = Ys_c(0) - sum(_b_re_est_v1 / Xs_s.row(0) % Xs_c.row(0));
 				_b_re_est.row(i) = temp2;
 			}
 			b_re_est(j) = _b_re_est;
@@ -248,35 +253,35 @@ void CTPRSppProc(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 	}
 	/////////////////////////////////////////////////////////
 
-	std::cout << "Finished!" << std::endl;    
+	cout << "Finished!" << endl;    
 	return;
 }
 
 
 // Compute MSE using single node
-void CTPRSppMSE(arma::fmat & mse, arma::field<arma::fmat> & b_est, arma::field<arma::fvec> & lambda1, 
-	arma::fvec lambda2, int L1, int L2, arma::fvec & Ys_test, arma::fmat & Xs_test, arma::fmat & cvR2){
+void CTPRSppMSE(fmat & mse, field<fmat> & b_est, field<fvec> & lambda1, 
+	fvec lambda2, int L1, int L2, fvec & Ys_test, fmat & Xs_test, fmat & cvR2){
 	int i, j;
 	
 	for (i=0; i<L2; i++) {
 		for (j=0; j<lambda1(i).n_elem; j++) {
-			mse(j, i) = arma::mean(arma::square(Ys_test - Xs_test * b_est(i).row(j).t()));
-			cvR2(j, i) = pow(arma::as_scalar(arma::cor(Ys_test, Xs_test * b_est(i).row(j).t())),2);
-			//cvR2(j, i) = 1.0-mse(j, i)/arma::mean(arma::square(Ys_test-mean(Ys_test))); ///// 
+			mse(j, i) = mean(square(Ys_test - Xs_test * b_est(i).row(j).t()));
+			cvR2(j, i) = pow(as_scalar(cor(Ys_test, Xs_test * b_est(i).row(j).t())),2);
+			//cvR2(j, i) = 1.0-mse(j, i)/mean(square(Ys_test-mean(Ys_test))); ///// 
 		}
 	}
 }
 
  
 // Main procedure
-void CTPRSppTune(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, const arma::fcube & A,
-	arma::field<arma::fmat> & b_est, arma::field<arma::fmat> & b_est_2, arma::field<arma::fmat> & b_re_est, arma::fmat & b_sec, 
-	arma::fvec & b_min, arma::fvec & b_min0, arma::fmat & cvm, arma::fvec & ctprRes, PARAM & cPar) {
+void CTPRSppTune(field<fvec> & Ys, field<fmat> & Xs, const fcube & A,
+	field<fmat> & b_est, field<fmat> & b_est_2, field<fmat> & b_re_est, fmat & b_sec, 
+	fvec & b_min, fvec & b_min0, fmat & cvm, fvec & ctprRes, PARAM & cPar) {
 
-	std::cout << "**************************************************************" << std::endl;
-	std::cout << "                COORDINATE DECENT ALGORITHM                   " << std::endl;
-	std::cout << "**************************************************************" << std::endl;
-	std::cout << std::endl;
+	cout << "**************************************************************" << endl;
+	cout << "                COORDINATE DECENT ALGORITHM                   " << endl;
+	cout << "**************************************************************" << endl;
+	cout << endl;
 	
 	int maxNz = cPar.maxNz;
 	bool re_est = cPar.re_est;
@@ -292,44 +297,44 @@ void CTPRSppTune(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 	CTPRSppProc(Ys, Xs, A, cPar.lambda1, cPar.lambda2, b_est, b_est_2, b_re_est, b_sec, cPar.nzero, cPar);
 	PrintCurrentTime(cPar); // Check Current Time
 
-	std::cout << "Coordinate decent algorithm process [" << 0 << "] has been finished..." << std::endl;
+	cout << "Coordinate decent algorithm process [" << 0 << "] has been finished..." << endl;
 	
 	// Use n fold CV for selecting the tuning parameter lambda1 and lambda2 /////////////////////////////
-	std::cout << "Conduct CV..." << std::endl;
+	cout << "Conduct CV..." << endl;
 	
 	// Set seed number
 	//srand(100);
 
 	int i, j, k, cnt1, cnt2;
 	int L1 = 0, L2 = cPar.lambda2.n_elem;
-	arma::field<arma::fvec> _lambda1(L2);
-	arma::fvec _lambda2;
-	arma::fvec f_ind(Ys(0).n_elem);
-	arma::fvec f_ind_(Ys(0).n_elem);
-	arma::fvec nf = arma::zeros<arma::fvec>(nFold);
-	arma::field<arma::fmat> mse(nFold);
-	arma::field<arma::fvec> Ys_train(Ys.n_elem);
-	arma::field<arma::fmat> Xs_train(Xs.n_elem);
-	arma::fvec Ys_test;
-	arma::fmat Xs_test;
-	arma::field<arma::fmat> _b_est;
-	arma::field<arma::fmat> _b_est_2, _b_re_est;
-	arma::umat _nzero;
+	field<fvec> _lambda1(L2);
+	fvec _lambda2;
+	fvec f_ind(Ys(0).n_elem);
+	fvec f_ind_(Ys(0).n_elem);
+	fvec nf = zeros<fvec>(nFold);
+	field<fmat> mse(nFold);
+	field<fvec> Ys_train(Ys.n_elem);
+	field<fmat> Xs_train(Xs.n_elem);
+	fvec Ys_test;
+	fmat Xs_test;
+	field<fmat> _b_est;
+	field<fmat> _b_est_2, _b_re_est;
+	umat _nzero;
 
 	// Compute max length of lambda1 and lambda2
 	for (i=0; i<L2; i++) if (cPar.lambda1(i).n_elem > L1) L1 = cPar.lambda1(i).n_elem;
-	std::cout << "Maximum length of lambda1 and lambda2: " << L1 << ", " << L2 << std::endl;
+	cout << "Maximum length of lambda1 and lambda2: " << L1 << ", " << L2 << endl;
 
 	// Set CV index
 	for (i=0; i<Ys(0).n_elem; i++) { f_ind_(i) = i % nFold; nf(f_ind_(i))++; }
-	f_ind = arma::shuffle(arma::shuffle(f_ind_));
+	f_ind = shuffle(shuffle(f_ind_));
 	
-	//for (i=0; i<Ys(0).n_elem; i++) std::cout << f_ind_(i) << " "; std::cout << std::endl;
-	//for (i=0; i<Ys(0).n_elem; i++) std::cout << f_ind(i) << " "; std::cout << std::endl;
-	//for (i=0; i<nFold; i++) std::cout << nf(i) << std::endl;
+	//for (i=0; i<Ys(0).n_elem; i++) cout << f_ind_(i) << " "; cout << endl;
+	//for (i=0; i<Ys(0).n_elem; i++) cout << f_ind(i) << " "; cout << endl;
+	//for (i=0; i<nFold; i++) cout << nf(i) << endl;
 
 	// Initialize mse, Ys_train, Xs_train
-	for (i=0; i<nFold; i++) {mse(i).set_size(L1, L2); mse(i).fill(arma::datum::inf);}
+	for (i=0; i<nFold; i++) {mse(i).set_size(L1, L2); mse(i).fill(datum::inf);}
 	for (i=1; i<Ys.n_elem; i++) Ys_train(i) = Ys(i);
 	for (i=1; i<Xs.n_elem; i++) Xs_train(i) = Xs(i);
 
@@ -341,9 +346,9 @@ void CTPRSppTune(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 		for (j=0; j<L2; j++) _lambda1(j) = cPar.lambda1(j);
 
 		// Set Ys_train, Ys_test
-		Ys_train(0) = arma::zeros<arma::fvec>(Ys(0).n_elem-nf(i));
-		if (!separinds) for (k=1; k<Ys.n_elem; k++) Ys_train(k) = arma::zeros<arma::fvec>(Ys(k).n_elem-nf(i));////
-		Ys_test = arma::zeros<arma::fvec>(nf(i));
+		Ys_train(0) = zeros<fvec>(Ys(0).n_elem-nf(i));
+		if (!separinds) for (k=1; k<Ys.n_elem; k++) Ys_train(k) = zeros<fvec>(Ys(k).n_elem-nf(i));////
+		Ys_test = zeros<fvec>(nf(i));
 
 		cnt1 = cnt2 = 0;
 		for (j=0; j<Ys(0).n_elem; j++) {
@@ -352,13 +357,13 @@ void CTPRSppTune(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 		}
 
 		// Set Xs_train, Xs_test
-		Xs_train(0) = arma::zeros<arma::fmat>(Xs(0).n_rows-nf(i),Xs(0).n_cols);
-		if (!separinds) for (k=1; k<Xs.n_elem; k++) Xs_train(k) = arma::zeros<arma::fmat>(Xs(k).n_rows-nf(i),Xs(k).n_cols);/////
-		Xs_test = arma::ones<arma::fmat>(nf(i), Xs(0).n_cols+1);
+		Xs_train(0) = zeros<fmat>(Xs(0).n_rows-nf(i),Xs(0).n_cols);
+		if (!separinds) for (k=1; k<Xs.n_elem; k++) Xs_train(k) = zeros<fmat>(Xs(k).n_rows-nf(i),Xs(k).n_cols);/////
+		Xs_test = ones<fmat>(nf(i), Xs(0).n_cols+1);
 
 		cnt1 = cnt2 = 0;
 		for (j=0; j<Xs(0).n_rows; j++) {
-			if (i == f_ind(j)) {Xs_test(cnt1, arma::span(1,Xs(0).n_cols)) = Xs(0).row(j); cnt1++;}
+			if (i == f_ind(j)) {Xs_test(cnt1, span(1,Xs(0).n_cols)) = Xs(0).row(j); cnt1++;}
 			else {Xs_train(0).row(cnt2) =  Xs(0).row(j); if (!separinds) for (k=1; k<Xs.n_elem; k++) Xs_train(k).row(cnt2) =  Xs(k).row(j); cnt2++;}/////
 		}
 		
@@ -367,12 +372,12 @@ void CTPRSppTune(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 		CTPRSppProc(Ys_train, Xs_train, A, _lambda1, _lambda2, _b_est, _b_est_2, _b_re_est, b_sec, _nzero, cPar);
 		PrintCurrentTime(cPar); // Check Current Time
  
-		std::cout << "Coordinate decent algorithm process [" << i+1 << "] has been finished..." << std::endl;
+		cout << "Coordinate decent algorithm process [" << i+1 << "] has been finished..." << endl;
 
 		// Compute MSE
-		arma::fmat cvR2(L1,L2); cvR2.zeros(); //////
+		fmat cvR2(L1,L2); cvR2.zeros(); //////
 		CTPRSppMSE(mse(i), _b_est, _lambda1, _lambda2, L1, L2, Ys_test, Xs_test, cvR2);
-		//cvR2.save("./res/cvR2_" + cPar.fnameYs + "_" + cPar.penalize + "_" + patch::to_string(i+1) + ".txt", arma::csv_ascii); ///// 
+		//cvR2.save("./res/cvR2_" + cPar.fnameYs + "_" + cPar.penalize + "_" + patch::to_string(i+1) + ".txt", csv_ascii); ///// 
 
 	}
 
@@ -380,61 +385,61 @@ void CTPRSppTune(arma::field<arma::fvec> & Ys, arma::field<arma::fmat> & Xs, con
 	ComputeCVRes(b_min, b_min0, mse, b_est, cPar.lambda1, cPar.lambda2, nFold, cPar.nzero, ctprRes, cvm);
 
 	// Save Coefficients
-	std::cout << "Save all coefficients..." << std::endl;
-	b_min.save(cPar.output+".beta", arma::csv_ascii);
-	b_min0.save(cPar.output+".beta0", arma::csv_ascii);
+	cout << "Save all coefficients..." << endl;
+	b_min.save(cPar.output+".beta", csv_ascii);
+	b_min0.save(cPar.output+".beta0", csv_ascii);
 	PrintCurrentTime(cPar); // Check Current Time
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 }
 
 // Compute MSE and Prediction R2
-void CTPRSppPred(arma::fvec & Ys_test, arma::fmat & Xs_test, arma::fvec & b_min, arma::fvec & b_min0, arma::fvec & ctprRes, PARAM & cPar){
+void CTPRSppPred(fvec & Ys_test, fmat & Xs_test, fvec & b_min, fvec & b_min0, fvec & ctprRes, PARAM & cPar){
 	
-	std::cout << "**************************************************************" << std::endl;
-	std::cout << "                   PREDICTION R2 AND MSE                      " << std::endl;
-	std::cout << "**************************************************************" << std::endl;
-	std::cout << std::endl;
+	cout << "**************************************************************" << endl;
+	cout << "                   PREDICTION R2 AND MSE                      " << endl;
+	cout << "**************************************************************" << endl;
+	cout << endl;
 
 	float mse, R2, R2_1, mse0, R20, R20_1, slope, slope0;
-	arma::fmat one = arma::ones<arma::fmat>(Xs_test.n_rows,1); 
-	arma::fmat _Xs_test = Xs_test; _Xs_test.insert_cols(0, one);
+	fmat one = ones<fmat>(Xs_test.n_rows,1); 
+	fmat _Xs_test = Xs_test; _Xs_test.insert_cols(0, one);
 
-	//std::cout << "_Xs_test "<< _Xs_test(0,0) << " " << _Xs_test(0,1) << " " << _Xs_test(0,2) << std::endl;
-	//std::cout << "_Xs_test "<< _Xs_test(1,0) << " " << _Xs_test(1,1) << " " << _Xs_test(1,2) << std::endl;
-	//std::cout << "Ys_test "<< Ys_test(0) << " " << Ys_test(1) << " " << Ys_test(2) << std::endl;
+	//cout << "_Xs_test "<< _Xs_test(0,0) << " " << _Xs_test(0,1) << " " << _Xs_test(0,2) << endl;
+	//cout << "_Xs_test "<< _Xs_test(1,0) << " " << _Xs_test(1,1) << " " << _Xs_test(1,2) << endl;
+	//cout << "Ys_test "<< Ys_test(0) << " " << Ys_test(1) << " " << Ys_test(2) << endl;
 
-	arma::fvec Xsb = _Xs_test * b_min;
-	arma::fvec Xsb0 = _Xs_test * b_min0;
+	fvec Xsb = _Xs_test * b_min;
+	fvec Xsb0 = _Xs_test * b_min0;
 
-	//std::cout << "Y_Xsb "<< Y_Xsb(0) << " " << Y_Xsb(1) << " " << Y_Xsb(2) << std::endl;
-	//std::cout << "Y_Xsb0 "<< Y_Xsb0(0) << " " << Y_Xsb0(1) << " " << Y_Xsb0(2) << std::endl;
+	//cout << "Y_Xsb "<< Y_Xsb(0) << " " << Y_Xsb(1) << " " << Y_Xsb(2) << endl;
+	//cout << "Y_Xsb0 "<< Y_Xsb0(0) << " " << Y_Xsb0(1) << " " << Y_Xsb0(2) << endl;
 
-	mse = arma::mean(arma::square(Ys_test - Xsb));
-	mse0 = arma::mean(arma::square(Ys_test - Xsb0));
-	R2 = pow(arma::as_scalar(arma::cor(Ys_test, Xsb)),2);
-	R20 = pow(arma::as_scalar(arma::cor(Ys_test, Xsb0)),2);
-	R2_1 = 1.0-mse/arma::mean(arma::square(Ys_test-mean(Ys_test)));
-	R20_1 = 1.0-mse0/arma::mean(arma::square(Ys_test-mean(Ys_test)));
-	slope = arma::stddev(Ys_test)/arma::stddev(Xsb)*arma::as_scalar(arma::cor(Ys_test, Xsb));
-	slope0 = arma::stddev(Ys_test)/arma::stddev(Xsb0)*arma::as_scalar(arma::cor(Ys_test, Xsb0));
+	mse = mean(square(Ys_test - Xsb));
+	mse0 = mean(square(Ys_test - Xsb0));
+	R2 = pow(as_scalar(cor(Ys_test, Xsb)),2);
+	R20 = pow(as_scalar(cor(Ys_test, Xsb0)),2);
+	R2_1 = 1.0-mse/mean(square(Ys_test-mean(Ys_test)));
+	R20_1 = 1.0-mse0/mean(square(Ys_test-mean(Ys_test)));
+	slope = stddev(Ys_test)/stddev(Xsb)*as_scalar(cor(Ys_test, Xsb));
+	slope0 = stddev(Ys_test)/stddev(Xsb0)*as_scalar(cor(Ys_test, Xsb0));
 
 	// Save Results
 	ctprRes(0)=R20; ctprRes(1)=R20_1; ctprRes(2)=mse0;
 	ctprRes(6)=R2; ctprRes(7)=R2_1; ctprRes(8)=mse;
 	ctprRes(13)=slope0; ctprRes(14)=slope;
-	ctprRes.save(cPar.output+".res", arma::csv_ascii);
+	ctprRes.save(cPar.output+".res", csv_ascii);
 
 	// Print Results
-	std::cout << "(1) Prediction Results with " << cPar.penalize << std::endl;
-	std::cout << "lambda2=0" << ",lambda1=" << ctprRes(3) << ",R2=" << R20 << ",R2(by MSE)=" << R20_1 << ",MSE=" << mse0;
-	std::cout << ",Slope=" << slope0 << ",Nzbeta=" << ctprRes(4) << ",cvMSE=" << ctprRes(5) << std::endl;
-	std::cout << std::endl;
-	std::cout << "(2) Prediction Results  with " << cPar.penalize << " + " << cPar.penalize2 << std::endl;
-	std::cout << "lambda2=" << ctprRes(10) << ",lambda1=" << ctprRes(9) << ",R2=" << R2 << ",R2(by MSE)=" << R2_1 << ",MSE=" << mse;
-	std::cout << ",Slope=" << slope <<",Nzbeta=" << ctprRes(11) << ",cvMSE=" << ctprRes(12) << std::endl;
-	std::cout << std::endl;
-	std::cout << "End the CTPR Program!!!!!" << std::endl;
+	cout << "(1) Prediction Results with " << cPar.penalize << endl;
+	cout << "lambda2=0" << ",lambda1=" << ctprRes(3) << ",R2=" << R20 << ",R2(by MSE)=" << R20_1 << ",MSE=" << mse0;
+	cout << ",Slope=" << slope0 << ",Nzbeta=" << ctprRes(4) << ",cvMSE=" << ctprRes(5) << endl;
+	cout << endl;
+	cout << "(2) Prediction Results  with " << cPar.penalize << " + " << cPar.penalize2 << endl;
+	cout << "lambda2=" << ctprRes(10) << ",lambda1=" << ctprRes(9) << ",R2=" << R2 << ",R2(by MSE)=" << R2_1 << ",MSE=" << mse;
+	cout << ",Slope=" << slope <<",Nzbeta=" << ctprRes(11) << ",cvMSE=" << ctprRes(12) << endl;
+	cout << endl;
+	cout << "End the CTPR Program!!!!!" << endl;
 	PrintCurrentTime(cPar); // Check Current Time
 }
 
@@ -477,7 +482,7 @@ int main(int argc, char **argv) {
 	cPar.penalize = "Lasso"; cPar.penalize2 = "CTPR";
 	cPar.separinds = 0; cPar.nFold = 5;
 	cPar.perc = 0.25;
-	cPar.error = FALSE;	cPar.re_est = FALSE; cPar.slambda2 = FALSE;
+	cPar.error = false;	cPar.re_est = false; cPar.slambda2 = false;
 	cPar.maxNz = 0; cPar.maxIter = 10000; 
 	cPar.gamma = 3.0; cPar.tol = 0.0001; 
 	cPar.output = "CTPRResult";
@@ -508,16 +513,16 @@ int main(int argc, char **argv) {
 
 	// Set A matrix ////////////////////////////////////
 	int i, j, k;
-	arma::fcube A; A.set_size(cPar.ncolYs+cPar.nsecTrait, cPar.ncolYs+cPar.nsecTrait, cPar.ncolXs);
-	arma::fmat A2(cPar.ncolYs+cPar.nsecTrait,cPar.ncolYs+cPar.nsecTrait); A2.fill(1); A2.diag()-=1;
+	fcube A; A.set_size(cPar.ncolYs+cPar.nsecTrait, cPar.ncolYs+cPar.nsecTrait, cPar.ncolXs);
+	fmat A2(cPar.ncolYs+cPar.nsecTrait,cPar.ncolYs+cPar.nsecTrait); A2.fill(1); A2.diag()-=1;
 	for (i=0; i<cPar.ncolXs; i++) A.slice(i) = A2;
 	////////////////////////////////////////////////////
 
 	// Read Phenotype, Genotype and Summary files //////
-  arma::field<arma::fvec> Ys(cPar.ncolYs);
-	arma::field<arma::fmat> Xs(cPar.ncolYs);
-	arma::fvec Ystest, imr2;
-	arma::fmat Xstest, b_sec, seb_sec; 
+  field<fvec> Ys(cPar.ncolYs);
+	field<fmat> Xs(cPar.ncolYs);
+	fvec Ystest, imr2;
+	fmat Xstest, b_sec, seb_sec; 
 	float avgseb; 
 
 	PrintCurrentTime(cPar); // Check Current Time
@@ -526,8 +531,8 @@ int main(int argc, char **argv) {
 	if (cPar.useSummary) {
 		LoadSummary(b_sec, seb_sec, imr2, cPar.fnameSs, cPar); // Read Summary File
 		// reset A matrix
-		avgseb = arma::mean(arma::mean(seb_sec));
-		arma::fmat A3(cPar.ncolYs+cPar.nsecTrait,cPar.ncolYs+cPar.nsecTrait); A3.fill(1); A3.diag()-=1;
+		avgseb = mean(mean(seb_sec));
+		fmat A3(cPar.ncolYs+cPar.nsecTrait,cPar.ncolYs+cPar.nsecTrait); A3.fill(1); A3.diag()-=1;
 		for (i=0; i<cPar.ncolXs; i++) {
 			for (j=0; j<cPar.ncolYs; j++) {
 				for (k=j+1; k<cPar.ncolYs; k++) {A3(j,k) = A3(k,j) = 1; /*imr2(i)/avgseb;*/}
@@ -547,10 +552,10 @@ int main(int argc, char **argv) {
 	////////////////////////////////////////////////////
 
 	// Estimate parameters and select lambda1, labmda2 and Save beta coefficients
-	arma::field<arma::fmat> b_est, b_est_2, b_re_est;
-	arma::fvec bmin, bmin0;
-	arma::fmat cvm;
-	arma::fvec ctprRes; ctprRes.set_size(15); // result file
+	field<fmat> b_est, b_est_2, b_re_est;
+	fvec bmin, bmin0;
+	fmat cvm;
+	fvec ctprRes; ctprRes.set_size(15); // result file
 	CTPRSppTune(Ys, Xs, A,	b_est, b_est_2, b_re_est, b_sec, bmin, bmin0, cvm, ctprRes, cPar); 
 	//////////////////////////////////////////////////////
 
