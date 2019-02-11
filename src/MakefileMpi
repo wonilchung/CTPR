@@ -1,9 +1,7 @@
 GCC= mpicxx
 
-CFLAGS=  -fPIC -g -O2 -DNDEBUG -I"/n/app/R/3.4.1/lib64/R/include"  -I"/usr/include/" -I"/home/wc120/RO2/Rcpp/include/" -I"/home/wc120/RO2/RcppArmadillo/include/" -I"/n/app/openmpi/2.0.1/include/"
-
-LFLAGS= -L"/n/app/openblas/0.2.19/lib/" -llapack -lblas -L"/n/app/R/3.4.1/lib64/R/lib" 
-LIBS= "/n/app/R/3.4.1/lib64/R/lib/libR.so" 
+CFLAGS=  -fPIC -g -O2 -DNDEBUG -I"/usr/include/" -I"/home/wc120/packages/armadillo-9.200.7/include" -I"/n/app/openmpi/2.0.1/include/"
+LFLAGS= -L"/n/app/openblas/0.2.19/lib/" -llapack -lblas -L"/home/wc120/packages/armadillo-9.200.7/lib64" -larmadillo 
 
 .cpp.o:
 	$(GCC) $(CFLAGS) -c $< 
@@ -11,7 +9,6 @@ LIBS= "/n/app/R/3.4.1/lib64/R/lib/libR.so"
 SOURCE= CTPRMpiMain.cpp
 
 ctprmpi: $(SOURCE:.cpp=.o)
-	$(GCC) -o $@ $(SOURCE:.cpp=.o) $(LFLAGS) $(LIBS)
+	$(GCC) -o $@ $(SOURCE:.cpp=.o) $(LFLAGS)
 
 clean: $(SOURCE:.cpp=.o) ctprmpi
-	
